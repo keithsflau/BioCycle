@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>BioCycle: Photosynthesis vs Respiration</title>
-    <!-- Favicon -->
+    
+    <!-- Favicon (Data URI to prevent 404) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
     
     <!-- Tailwind CSS -->
@@ -40,22 +41,26 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Libraries (Order matters!) -->
-    <!-- 1. React & ReactDOM -->
+    <!-- Libraries -->
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- 2. Prop-types (Required by Recharts UMD) -->
+    <!-- Prop-types (Required dependency for Recharts UMD) -->
     <script crossorigin src="https://unpkg.com/prop-types/prop-types.min.js"></script>
     
-    <!-- 3. Recharts -->
-    <script crossorigin src="https://unpkg.com/recharts@2.5.0/umd/Recharts.js"></script>
+    <!-- Recharts -->
+    <script crossorigin src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
     
-    <!-- 4. Babel for in-browser compilation -->
+    <!-- Babel for in-browser compilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
       body { font-family: 'Inter', sans-serif; }
+      /* Custom scrollbar for dashboard */
+      aside::-webkit-scrollbar { width: 6px; }
+      aside::-webkit-scrollbar-track { background: #1e293b; }
+      aside::-webkit-scrollbar-thumb { background: #475569; border-radius: 3px; }
     </style>
   <script type="importmap">
 {
@@ -73,13 +78,12 @@
     <div id="root"></div>
 
     <script type="text/babel">
-      // Access globals provided by UMD scripts
+      // --- GLOBALS & UTILS ---
       const { useState, useEffect, useMemo } = React;
       const { createRoot } = ReactDOM;
-      // Access Recharts from window object
       const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } = window.Recharts;
 
-      // --- ICONS (Inline components to avoid import errors) ---
+      // --- ICON COMPONENTS (Inline SVGs) ---
       const PlayIcon = ({ size = 24, className = "" }) => (
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
       );
@@ -93,10 +97,10 @@
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
       );
 
-      // --- LOGIC: BIOLOGY UTILS ---
+      // --- BIOLOGY LOGIC ---
       const calculateRates = (time) => {
-        let lightIntensity = 0;
         // Day is roughly 06:00 to 18:00 with peak at 12:00
+        let lightIntensity = 0;
         if (time > 5 && time < 19) {
           const x = (time - 5) / 14 * Math.PI; 
           lightIntensity = Math.sin(x) * 100;
@@ -104,7 +108,7 @@
         lightIntensity = Math.max(0, lightIntensity);
 
         const photosynthesisRate = lightIntensity; 
-        const respirationRate = 25; 
+        const respirationRate = 25; // Constant baseline
         const netExchange = photosynthesisRate - respirationRate;
 
         let indicatorColor = '#EF4444'; // Red (Neutral)
@@ -131,8 +135,7 @@
         };
       };
 
-      // --- COMPONENTS ---
-
+      // --- COMPONENT: TestTube ---
       const TestTube = ({ simState }) => {
         const { indicatorColor, netExchange } = simState;
         const isPhotoDominant = netExchange > 5;
@@ -149,7 +152,7 @@
               >
                 {/* Bubbles */}
                 <div className="absolute inset-0 overflow-hidden">
-                   {/* O2 (Blue) */}
+                   {/* O2 (Blue) - Rising if Photo, Sinking if Resp */}
                    {isPhotoDominant && [...Array(8)].map((_, i) => (
                      <div key={`o2-rise-${i}`} className="absolute w-3 h-3 rounded-full bg-cyan-200 border border-white/50 shadow-sm animate-rise"
                        style={{ left: `${20 + Math.random() * 60}%`, bottom: '20%', animationDelay: `${Math.random() * 2}s`, animationDuration: `${3 + Math.random()}s` }} />
@@ -158,7 +161,8 @@
                       <div key={`o2-sink-${i}`} className="absolute w-3 h-3 rounded-full bg-cyan-200 border border-white/50 shadow-sm animate-sink"
                       style={{ left: `${10 + Math.random() * 80}%`, top: '0%', animationDelay: `${Math.random() * 2}s`, animationDuration: `${4 + Math.random()}s` }} />
                    ))}
-                   {/* CO2 (Grey) */}
+                   
+                   {/* CO2 (Grey) - Sinking if Photo, Rising if Resp */}
                    {isPhotoDominant && [...Array(5)].map((_, i) => (
                      <div key={`co2-sink-${i}`} className="absolute w-2 h-2 rounded-full bg-gray-600 border border-gray-400 animate-sink"
                        style={{ left: `${10 + Math.random() * 80}%`, top: '0%', animationDelay: `${Math.random() * 2}s` }} />
@@ -169,6 +173,7 @@
                    ))}
                 </div>
               </div>
+              
               {/* Plant SVG */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 h-48 opacity-90">
                    <svg viewBox="0 0 100 150" fill="none" stroke="currentColor" className="text-green-800 w-full h-full drop-shadow-lg">
@@ -182,15 +187,18 @@
                       <ellipse cx="50" cy="40" rx="8" ry="4" fill="#15803d" stroke="none" />
                    </svg>
               </div>
+              
               {/* Shine */}
               <div className="absolute top-0 left-4 w-4 h-full bg-gradient-to-b from-white/20 to-transparent rounded-full blur-[2px]"></div>
             </div>
+            
             {/* Rim */}
             <div className="absolute top-0 w-full h-8 border-4 border-slate-300 bg-slate-200/20 rounded-full -translate-y-1/2 z-20 shadow-sm"></div>
           </div>
         );
       };
 
+      // --- COMPONENT: Simulation ---
       const Simulation = ({ time, simState }) => {
         const getSkyGradient = () => {
           if (time < 5 || time > 20) return 'hsl(222, 47%, 11%)'; // Night
@@ -212,21 +220,26 @@
                   style={{ top: `${Math.random() * 100}%`, left: `${Math.random() * 100}%`, width: `${Math.random() * 3}px`, height: `${Math.random() * 3}px`, opacity: Math.random() }} />
               ))}
             </div>
+            
             {/* Celestial Body */}
             <div className="absolute top-[50%] left-[50%] w-[80vw] h-[80vw] rounded-full pointer-events-none"
               style={{ transform: `translate(-50%, 50%) rotate(${((time - 6) / 24) * 360}deg)`, transition: 'transform 0.1s linear' }}>
               <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2">
                  <div className="w-16 h-16 md:w-24 md:h-24 bg-yellow-400 rounded-full blur-xl absolute opacity-50"></div>
-                 <div className="w-16 h-16 md:w-24 md:h-24 bg-yellow-300 rounded-full shadow-2xl"></div>
+                 <div className="w-16 h-16 md:w-24 md:h-24 bg-yellow-300 rounded-full shadow-2xl relative flex items-center justify-center">
+                   {/* Sun */}
+                 </div>
               </div>
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 rotate-180">
-                 <div className="w-12 h-12 md:w-20 md:h-20 bg-slate-200 rounded-full shadow-inner"></div>
+                 <div className="w-12 h-12 md:w-20 md:h-20 bg-slate-200 rounded-full shadow-[inset_-10px_0px_20px_rgba(0,0,0,0.2)]"></div>
               </div>
             </div>
+
             {/* Lab Bench */}
             <div className="absolute bottom-0 w-full h-24 bg-slate-800 border-t border-slate-700 flex items-center justify-center z-10">
                <div className="text-slate-500 text-sm font-mono tracking-widest uppercase">Laboratory Simulation Environment</div>
             </div>
+            
             {/* Test Tube */}
             <div className="absolute inset-0 flex items-end justify-center pb-12 z-20">
               <TestTube simState={simState} />
@@ -235,6 +248,7 @@
         );
       };
 
+      // --- COMPONENT: ControlBar ---
       const ControlBar = ({ time, setTime, isPlaying, setIsPlaying }) => {
         const formatTime = (t) => {
           const hours = Math.floor(t);
@@ -256,7 +270,7 @@
                 className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer accent-cyan-400" />
               <SunIcon className="w-5 h-5 text-yellow-400" />
             </div>
-            <button onClick={() => setIsPlaying(!isPlaying)} className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg">
+            <button onClick={() => setIsPlaying(!isPlaying)} className="flex items-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg font-medium shadow-lg transition-transform active:scale-95">
               {isPlaying ? <PauseIcon size={18} /> : <PlayIcon size={18} />}
               <span className="hidden sm:inline">{isPlaying ? 'Pause' : 'Auto Cycle'}</span>
             </button>
@@ -264,8 +278,10 @@
         );
       };
 
+      // --- COMPONENT: Dashboard ---
       const Dashboard = ({ time, simState }) => {
         const { photosynthesisRate, respirationRate, netExchange, indicatorColor, statusMessage } = simState;
+        
         const chartData = useMemo(() => {
           const data = [];
           for (let t = 0; t <= 24; t += 1) {
@@ -277,6 +293,7 @@
 
         return (
           <div className="space-y-8 text-slate-200">
+            {/* Stats Card */}
             <div className="bg-slate-700/50 p-4 rounded-xl border border-slate-600 shadow-sm">
               <h2 className="text-sm uppercase tracking-wider text-slate-400 font-semibold mb-2">Current Status</h2>
               <div className="flex items-center gap-4">
@@ -287,6 +304,8 @@
                  </div>
               </div>
             </div>
+            
+            {/* Bars */}
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <div className="flex justify-between text-sm mb-1">
@@ -297,6 +316,7 @@
                   <div className="h-full bg-green-500 transition-all duration-300" style={{ width: `${photosynthesisRate}%` }} />
                 </div>
               </div>
+              
               <div>
                  <div className="flex justify-between text-sm mb-1">
                   <span className="text-cyan-400 font-medium">Net Gas Exchange</span>
@@ -310,6 +330,8 @@
                 <div className="flex justify-between text-[10px] text-slate-500 mt-1"><span>Net Output (CO₂)</span><span>Net Uptake (CO₂)</span></div>
               </div>
             </div>
+
+            {/* Chart */}
             <div className="h-48 w-full bg-slate-900/50 rounded-xl p-2 border border-slate-700/50">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -328,6 +350,8 @@
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+            
+            {/* Legend */}
             <div className="grid grid-cols-3 gap-2 text-xs text-center border-t border-slate-700 pt-4">
                <div className="flex flex-col items-center gap-1"><div className="w-4 h-4 rounded-full bg-yellow-400"></div><span className="text-slate-400">High CO₂<br/>(Acidic)</span></div>
                <div className="flex flex-col items-center gap-1"><div className="w-4 h-4 rounded-full bg-red-500"></div><span className="text-slate-400">Normal CO₂<br/>(Neutral)</span></div>
@@ -337,7 +361,7 @@
         );
       };
 
-      // --- APP ---
+      // --- APP ROOT ---
       const App = () => {
         const [time, setTime] = useState(12);
         const [isPlaying, setIsPlaying] = useState(false);
