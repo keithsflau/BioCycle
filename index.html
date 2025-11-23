@@ -40,18 +40,24 @@
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Libraries (UMD - Global Scope) -->
+    <!-- Libraries (Order matters!) -->
+    <!-- 1. React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/recharts@2.10.3/umd/Recharts.js"></script>
     
-    <!-- Babel for in-browser compilation -->
+    <!-- 2. Prop-types (Required by Recharts UMD) -->
+    <script crossorigin src="https://unpkg.com/prop-types/prop-types.min.js"></script>
+    
+    <!-- 3. Recharts -->
+    <script crossorigin src="https://unpkg.com/recharts@2.5.0/umd/Recharts.js"></script>
+    
+    <!-- 4. Babel for in-browser compilation -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
       body { font-family: 'Inter', sans-serif; }
     </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://aistudiocdn.com/react@^19.2.0",
@@ -67,9 +73,11 @@
     <div id="root"></div>
 
     <script type="text/babel">
+      // Access globals provided by UMD scripts
       const { useState, useEffect, useMemo } = React;
       const { createRoot } = ReactDOM;
-      const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } = Recharts;
+      // Access Recharts from window object
+      const { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } = window.Recharts;
 
       // --- ICONS (Inline components to avoid import errors) ---
       const PlayIcon = ({ size = 24, className = "" }) => (
@@ -85,7 +93,7 @@
         <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
       );
 
-      // --- UTILS ---
+      // --- LOGIC: BIOLOGY UTILS ---
       const calculateRates = (time) => {
         let lightIntensity = 0;
         // Day is roughly 06:00 to 18:00 with peak at 12:00
